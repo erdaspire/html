@@ -6,12 +6,32 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <script src="https://stuk.github.io/jszip/dist/jszip.min.js"></script>
+    <script src="https://stuk.github.io/jszip/vendor/FileSaver.js"></script>
     <style>
         body {
             font-family: 'Roboto', sans-serif;
         }
         .editor {
             height: 200px;
+            resize: none;
+            padding-left: 30px;
+            background: #2d3748;
+            color: #cbd5e0;
+            border-radius: 8px;
+        }
+        .editor:focus {
+            outline: none;
+        }
+        .line-numbers {
+            position: absolute;
+            left: 0;
+            width: 30px;
+            text-align: right;
+            padding-right: 10px;
+            color: #718096;
+            user-select: none;
         }
         @media (min-width: 768px) {
             .editor {
@@ -72,7 +92,7 @@
 <body class="bg-gray-900 text-white">
     <div class="flex flex-col md:flex-row h-screen">
         <!-- Sidebar -->
-        <div id="sidebar" class="bg-gray-800 w-full md:w-64 p-4 sidebar md:sidebar-hidden">
+        <div id="sidebar" class="bg-gray-800 w-full md:w-64 p-4 sidebar sidebar-hidden">
             <div class="flex justify-between items-center mb-4">
                 <div class="text-gray-400 text-sm">Files</div>
                 <button onclick="toggleSidebar()" class="md:hidden bg-gray-700 text-white px-2 py-1 rounded-lg">
@@ -81,15 +101,15 @@
             </div>
             <div class="space-y-2">
                 <div id="htmlFile" class="flex items-center justify-between text-gray-300">
-                    <span onclick="showTab('html')" class="cursor-pointer">index.html</span>
+                    <span onclick="openFile('html')" class="cursor-pointer">index.html</span>
                     <i class="fas fa-trash-alt cursor-pointer" onclick="deleteFile('html')"></i>
                 </div>
                 <div id="cssFile" class="flex items-center justify-between text-gray-300">
-                    <span onclick="showTab('css')" class="cursor-pointer">styles.css</span>
+                    <span onclick="openFile('css')" class="cursor-pointer">styles.css</span>
                     <i class="fas fa-trash-alt cursor-pointer" onclick="deleteFile('css')"></i>
                 </div>
                 <div id="jsFile" class="flex items-center justify-between text-gray-300">
-                    <span onclick="showTab('js')" class="cursor-pointer">script.js</span>
+                    <span onclick="openFile('js')" class="cursor-pointer">script.js</span>
                     <i class="fas fa-trash-alt cursor-pointer" onclick="deleteFile('js')"></i>
                 </div>
             </div>
@@ -108,29 +128,33 @@
                 <button id="cssTabBtn" onclick="showTab('css')" class="bg-gray-700 text-white px-4 py-2 rounded-lg">CSS</button>
                 <button id="jsTabBtn" onclick="showTab('js')" class="bg-gray-700 text-white px-4 py-2 rounded-lg">JavaScript</button>
             </div>
-            <div id="htmlTab" class="flex-1 bg-gray-800 p-4 rounded-lg">
+            <div id="htmlTab" class="flex-1 bg-gray-800 p-4 rounded-lg relative">
                 <div class="flex justify-between items-center mb-4">
                     <div class="text-gray-400 text-sm">index.html</div>
                     <i class="fas fa-times cursor-pointer text-gray-400" onclick="closeTab('html')"></i>
                 </div>
-                <textarea id="htmlEditor" class="editor w-full bg-gray-700 text-gray-300 p-2 rounded-lg" placeholder="Write HTML here..."></textarea>
+                <div class="line-numbers">1<br>2<br>3</div>
+                <textarea id="htmlEditor" class="editor w-full" placeholder="Write HTML here..."></textarea>
             </div>
-            <div id="cssTab" class="hidden flex-1 bg-gray-800 p-4 rounded-lg">
+            <div id="cssTab" class="hidden flex-1 bg-gray-800 p-4 rounded-lg relative">
                 <div class="flex justify-between items-center mb-4">
                     <div class="text-gray-400 text-sm">styles.css</div>
                     <i class="fas fa-times cursor-pointer text-gray-400" onclick="closeTab('css')"></i>
                 </div>
-                <textarea id="cssEditor" class="editor w-full bg-gray-700 text-gray-300 p-2 rounded-lg" placeholder="Write CSS here..."></textarea>
+                <div class="line-numbers">1<br>2<br>3</div>
+                <textarea id="cssEditor" class="editor w-full" placeholder="Write CSS here..."></textarea>
             </div>
-            <div id="jsTab" class="hidden flex-1 bg-gray-800 p-4 rounded-lg">
+            <div id="jsTab" class="hidden flex-1 bg-gray-800 p-4 rounded-lg relative">
                 <div class="flex justify-between items-center mb-4">
                     <div class="text-gray-400 text-sm">script.js</div>
                     <i class="fas fa-times cursor-pointer text-gray-400" onclick="closeTab('js')"></i>
                 </div>
-                <textarea id="jsEditor" class="editor w-full bg-gray-700 text-gray-300 p-2 rounded-lg" placeholder="Write JavaScript here..."></textarea>
+                <div class="line-numbers">1<br>2<br>3</div>
+                <textarea id="jsEditor" class="editor w-full" placeholder="Write JavaScript here..."></textarea>
             </div>
-            <div class="flex justify-end">
+            <div class="flex justify-end space-x-4">
                 <button onclick="runCode()" class="bg-blue-600 text-white px-4 py-2 rounded-lg">Run</button>
+                <button onclick="saveFiles()" class="bg-green-600 text-white px-4 py-2 rounded-lg">Save</button>
             </div>
         </div>
     </div>
@@ -157,6 +181,7 @@
             document.getElementById('cssTab').classList.add('hidden');
             document.getElementById('jsTab').classList.add('hidden');
             document.getElementById(tab + 'Tab').classList.remove('hidden');
+            gsap.fromTo(`#${tab}Tab`, { opacity: 0 }, { opacity: 1, duration: 0.5 });
         }
 
         function closeTab(tab) {
@@ -184,7 +209,11 @@
 
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('sidebar-hidden');
+            if (sidebar.classList.contains('sidebar-hidden')) {
+                gsap.to('#sidebar', { x: 0, duration: 0.5, onComplete: () => sidebar.classList.remove('sidebar-hidden') });
+            } else {
+                gsap.to('#sidebar', { x: -sidebar.offsetWidth, duration: 0.5, onComplete: () => sidebar.classList.add('sidebar-hidden') });
+            }
         }
 
         function openNewFileModal() {
@@ -204,7 +233,7 @@
                 fileContainer.id = fileId + 'File';
                 fileContainer.className = 'flex items-center justify-between text-gray-300';
                 fileContainer.innerHTML = `
-                    <span onclick="showTab('${fileId}')" class="cursor-pointer">${fileName}</span>
+                    <span onclick="openFile('${fileId}')" class="cursor-pointer">${fileName}</span>
                     <i class="fas fa-trash-alt cursor-pointer" onclick="deleteFile('${fileId}')"></i>
                 `;
                 document.querySelector('#sidebar .space-y-2').appendChild(fileContainer);
@@ -218,13 +247,14 @@
 
                 const tabContent = document.createElement('div');
                 tabContent.id = fileId + 'Tab';
-                tabContent.className = 'hidden flex-1 bg-gray-800 p-4 rounded-lg';
+                tabContent.className = 'hidden flex-1 bg-gray-800 p-4 rounded-lg relative';
                 tabContent.innerHTML = `
                     <div class="flex justify-between items-center mb-4">
                         <div class="text-gray-400 text-sm">${fileName}</div>
                         <i class="fas fa-times cursor-pointer text-gray-400" onclick="closeTab('${fileId}')"></i>
                     </div>
-                    <textarea id="${fileId}Editor" class="editor w-full bg-gray-700 text-gray-300 p-2 rounded-lg" placeholder="Write ${fileType.toUpperCase()} here..."></textarea>
+                    <div class="line-numbers">1<br>2<br>3</div>
+                    <textarea id="${fileId}Editor" class="editor w-full" placeholder="Write ${fileType.toUpperCase()} here..."></textarea>
                 `;
                 document.querySelector('.flex-1.p-4.flex.flex-col.space-y-4').appendChild(tabContent);
 
@@ -232,6 +262,27 @@
             } else {
                 alert("Invalid file name or extension. Please use .html, .css, or .js extensions.");
             }
+        }
+
+        function openFile(tab) {
+            showTab(tab);
+            document.getElementById(tab + 'TabBtn').classList.remove('hidden');
+        }
+
+        function saveFiles() {
+            const zip = new JSZip();
+            const htmlContent = document.getElementById('htmlEditor').value;
+            const cssContent = document.getElementById('cssEditor').value;
+            const jsContent = document.getElementById('jsEditor').value;
+
+            if (htmlContent) zip.file("index.html", htmlContent);
+            if (cssContent) zip.file("styles.css", cssContent);
+            if (jsContent) zip.file("script.js", jsContent);
+
+            zip.generateAsync({ type: "blob" })
+                .then(function (content) {
+                    saveAs(content, "project.zip");
+                });
         }
     </script>
 </body>

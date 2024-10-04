@@ -1,233 +1,238 @@
-<!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mobile HTML IDE</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/material.min.css">
+    <title>Responsive IDE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body {
-            background-color: #000000;
-            color: #ffffff;
+            font-family: 'Roboto', sans-serif;
         }
-
-        button{
-            background-color:#ececec;
-            border: none;
-            padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 10px;
+        .editor {
+            height: 200px;
         }
-        .editor-container {
-            height: calc(100vh - 150px);
-          
-            margin-bottom: 10px;
-          
-            border-radius: 30px;
+        @media (min-width: 768px) {
+            .editor {
+                height: 400px;
+            }
         }
-
-        .output-modal {
+        .hidden {
             display: none;
-            /* Hidden by default */
+        }
+        .modal {
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.8);
-            /* Semi-transparent background */
-            z-index: 1000;
-            /* Ensure it's above everything else */
-            padding: 20px;
-            overflow: auto;
-            /* Allow scrolling if necessary */
-        }
-
-        .output-content {
-            background-color: #2d2d30;
-            border: 1px solid #333;
+            width: 100%;
             height: 100%;
-            /* Full height */
-            padding: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+        }
+        .modal-content {
+            width: 90%;
+            max-width: 400px;
+            background: #1a202c;
             border-radius: 8px;
-            overflow: auto;
+            padding: 16px;
+            position: relative;
         }
-
-        .active-tab {
-            background-color: #007acc;
-            /* VS Code blue for active tab */
+        .close-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: #e53e3e;
             color: white;
-        }
-
-        .close-modal {
-            background-color: #f44336;
-            /* Red close button */
-            color: white;
-            padding: 10px 20px;
             border: none;
-            border-radius: 5px;
+            padding: 8px 16px;
+            border-radius: 4px;
             cursor: pointer;
-            margin-bottom: 10px;
+        }
+        .sidebar {
+            transition: transform 0.3s ease;
+        }
+        .sidebar-hidden {
+            transform: translateX(-100%);
+        }
+        @media (max-width: 767px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100%;
+                z-index: 40;
+            }
         }
     </style>
 </head>
-
-<body class="flex flex-col">
-
-    <div class="flex-grow p-4">
-        <h1 class="text-xl font-bold mb-4">Mobile HTML IDE</h1>
-        <div class="flex space-x-4 mb-4">
-            <button id="htmlTab" class="tab-button flex-grow bg-blue-500 text-white font-bold py-2 rounded active-tab">HTML</button>
-            <button id="cssTab" class="tab-button flex-grow bg-gray-600 text-white py-2 rounded">CSS</button>
-            <button id="jsTab" class="tab-button flex-grow bg-gray-600 text-white py-2 rounded">JavaScript</button>
+<body class="bg-gray-900 text-white">
+    <div class="flex flex-col md:flex-row h-screen">
+        <!-- Sidebar -->
+        <div id="sidebar" class="bg-gray-800 w-full md:w-64 p-4 sidebar md:sidebar-hidden">
+            <div class="flex justify-between items-center mb-4">
+                <div class="text-gray-400 text-sm">Files</div>
+                <button onclick="toggleSidebar()" class="md:hidden bg-gray-700 text-white px-2 py-1 rounded-lg">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-2">
+                <div id="htmlFile" class="flex items-center justify-between text-gray-300">
+                    <span onclick="showTab('html')" class="cursor-pointer">index.html</span>
+                    <i class="fas fa-trash-alt cursor-pointer" onclick="deleteFile('html')"></i>
+                </div>
+                <div id="cssFile" class="flex items-center justify-between text-gray-300">
+                    <span onclick="showTab('css')" class="cursor-pointer">styles.css</span>
+                    <i class="fas fa-trash-alt cursor-pointer" onclick="deleteFile('css')"></i>
+                </div>
+                <div id="jsFile" class="flex items-center justify-between text-gray-300">
+                    <span onclick="showTab('js')" class="cursor-pointer">script.js</span>
+                    <i class="fas fa-trash-alt cursor-pointer" onclick="deleteFile('js')"></i>
+                </div>
+            </div>
+            <button onclick="openNewFileModal()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg w-full">New File</button>
         </div>
-        <div class="editor-container">
-            <textarea id="code"></textarea>
+        <!-- Main Content -->
+        <div class="flex-1 p-4 flex flex-col space-y-4">
+            <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-bold">Responsive IDE</h1>
+                <button onclick="toggleSidebar()" class="md:hidden bg-gray-700 text-white px-4 py-2 rounded-lg">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            <div class="flex space-x-4">
+                <button id="htmlTabBtn" onclick="showTab('html')" class="bg-gray-700 text-white px-4 py-2 rounded-lg">HTML</button>
+                <button id="cssTabBtn" onclick="showTab('css')" class="bg-gray-700 text-white px-4 py-2 rounded-lg">CSS</button>
+                <button id="jsTabBtn" onclick="showTab('js')" class="bg-gray-700 text-white px-4 py-2 rounded-lg">JavaScript</button>
+            </div>
+            <div id="htmlTab" class="flex-1 bg-gray-800 p-4 rounded-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="text-gray-400 text-sm">index.html</div>
+                    <i class="fas fa-times cursor-pointer text-gray-400" onclick="closeTab('html')"></i>
+                </div>
+                <textarea id="htmlEditor" class="editor w-full bg-gray-700 text-gray-300 p-2 rounded-lg" placeholder="Write HTML here..."></textarea>
+            </div>
+            <div id="cssTab" class="hidden flex-1 bg-gray-800 p-4 rounded-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="text-gray-400 text-sm">styles.css</div>
+                    <i class="fas fa-times cursor-pointer text-gray-400" onclick="closeTab('css')"></i>
+                </div>
+                <textarea id="cssEditor" class="editor w-full bg-gray-700 text-gray-300 p-2 rounded-lg" placeholder="Write CSS here..."></textarea>
+            </div>
+            <div id="jsTab" class="hidden flex-1 bg-gray-800 p-4 rounded-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="text-gray-400 text-sm">script.js</div>
+                    <i class="fas fa-times cursor-pointer text-gray-400" onclick="closeTab('js')"></i>
+                </div>
+                <textarea id="jsEditor" class="editor w-full bg-gray-700 text-gray-300 p-2 rounded-lg" placeholder="Write JavaScript here..."></textarea>
+            </div>
+            <div class="flex justify-end">
+                <button onclick="runCode()" class="bg-blue-600 text-white px-4 py-2 rounded-lg">Run</button>
+            </div>
         </div>
     </div>
 
-    <div class="p-4">
-        <button id="runCode" class="w-full bg-green-500 text-white font-bold py-2 rounded">Run Code</button>
-        <button id="toggleOutput" class="w-full bg-blue-500 text-white font-bold py-2 rounded mt-2">Show Output</button>
+    <div id="outputModal" class="modal hidden">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal()">Close</button>
+            <iframe id="output" class="w-full h-full bg-white rounded-lg"></iframe>
+        </div>
     </div>
 
-    <!-- Output Modal -->
-    <div id="outputModal" class="output-modal">
-        <button class="close-modal" id="closeOutput">Close</button>
-        <div id="output" class="output-content w-full p-2 rounded-md"></div>
+    <div id="newFileModal" class="modal hidden">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeNewFileModal()">Close</button>
+            <h2 class="text-xl mb-4">Create New File</h2>
+            <input id="newFileName" type="text" class="w-full p-2 mb-4 bg-gray-700 text-white rounded-lg" placeholder="Enter file name with extension (.html, .css, .js)">
+            <button onclick="createNewFile()" class="bg-blue-600 text-white px-4 py-2 rounded-lg w-full">Create</button>
+        </div>
     </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.css">
 
     <script>
-        const editor = CodeMirror.fromTextArea(document.getElementById('code'), {
-            lineNumbers: true,
-            mode: "text/html",
-            theme: "material",
-            lineWrapping: true,
-            viewportMargin: Infinity,
-            extraKeys: {
-                "Ctrl-Space": "autocomplete" // Enable auto-complete with Ctrl-Space
-            }
-        });
-
-        let currentMode = "html";
-
-        // Function to run code and display output
-        document.getElementById('runCode').onclick = function () {
-            // Get the current code based on the active tab
-            let htmlCode = localStorage.getItem('htmlCode') || "<!-- Write your HTML code here... -->";
-            let cssCode = localStorage.getItem('cssCode') || "/* Write your CSS code here... */";
-            let jsCode = localStorage.getItem('jsCode') || "// Write your JavaScript code here...";
-
-            // Get the code from the editor
-            if (currentMode === "html") {
-                htmlCode = editor.getValue();
-            } else if (currentMode === "css") {
-                cssCode = editor.getValue();
-            } else if (currentMode === "javascript") {
-                jsCode = editor.getValue();
-            }
-
-            // Save the code to local storage
-            localStorage.setItem('htmlCode', htmlCode);
-            localStorage.setItem('cssCode', cssCode);
-            localStorage.setItem('jsCode', jsCode);
-
-            // Update the output area in the modal
-            const outputFrame = document.getElementById('output');
-            outputFrame.innerHTML = ''; // Clear previous content
-
-            // Create a style tag for CSS
-            const styleTag = document.createElement('style');
-            styleTag.innerHTML = cssCode;
-
-            // Create a script tag for JavaScript
-            const scriptTag = document.createElement('script');
-            scriptTag.innerHTML = jsCode;
-
-            // Append CSS and JavaScript to the output
-            outputFrame.appendChild(styleTag); // Append CSS
-            outputFrame.innerHTML += htmlCode; // Append HTML
-            outputFrame.appendChild(scriptTag); // Append JavaScript
-
-            // Show output modal after running code
-            document.getElementById('outputModal').style.display = 'block';
-        };
-
-        // Tab switching functionality
-        function switchTab(tab) {
-            document.getElementById('htmlTab').classList.remove('active-tab');
-            document.getElementById('cssTab').classList.remove('active-tab');
-            document.getElementById('jsTab').classList.remove('active-tab');
-
-            if (tab === 'html') {
-                currentMode = "html";
-                editor.setOption("mode", "text/html");
-                editor.setValue(localStorage.getItem('htmlCode') || "<!-- Write your HTML code here... -->");
-                document.getElementById('htmlTab').classList.add('active-tab');
-            } else if (tab === 'css') {
-                currentMode = "css";
-                editor.setOption("mode", "text/css");
-                editor.setValue(localStorage.getItem('cssCode') || "/* Write your CSS code here... */");
-                document.getElementById('cssTab').classList.add('active-tab');
-            } else if (tab === 'javascript') {
-                currentMode = "javascript";
-                editor.setOption("mode", "text/javascript");
-                editor.setValue(localStorage.getItem('jsCode') || "// Write your JavaScript code here...");
-                document.getElementById('jsTab').classList.add('active-tab');
-            }
+        function showTab(tab) {
+            document.getElementById('htmlTab').classList.add('hidden');
+            document.getElementById('cssTab').classList.add('hidden');
+            document.getElementById('jsTab').classList.add('hidden');
+            document.getElementById(tab + 'Tab').classList.remove('hidden');
         }
 
-        // Function to save code to local storage
-        function saveCode() {
-            const code = editor.getValue();
-            if (currentMode === "html") {
-                localStorage.setItem('htmlCode', code);
-            } else if (currentMode === "css") {
-                localStorage.setItem('cssCode', code);
-            } else if (currentMode === "javascript") {
-                localStorage.setItem('jsCode', code);
-            }
+        function closeTab(tab) {
+            document.getElementById(tab + 'Tab').classList.add('hidden');
+            document.getElementById(tab + 'TabBtn').classList.add('hidden');
         }
 
-        // Event listeners for tabs
-        document.getElementById('htmlTab').onclick = function () {
-            saveCode(); // Save current code before switching
-            switchTab('html');
-        };
+        function deleteFile(tab) {
+            closeTab(tab);
+            document.getElementById(tab + 'File').remove();
+        }
 
-        document.getElementById('cssTab').onclick = function () {
-            saveCode(); // Save current code before switching
-            switchTab('css');
-        };
+        function runCode() {
+            const htmlCode = document.getElementById('htmlEditor').value;
+            const cssCode = "<style>" + document.getElementById('cssEditor').value + "</style>";
+            const jsCode = "<script>" + document.getElementById('jsEditor').value + "<\/script>";
+            const output = document.getElementById('output');
+            output.contentDocument.body.innerHTML = htmlCode + cssCode + jsCode;
+            document.getElementById('outputModal').classList.remove('hidden');
+        }
 
-        document.getElementById('jsTab').onclick = function () {
-            saveCode(); // Save current code before switching
-            switchTab('javascript');
-        };
+        function closeModal() {
+            document.getElementById('outputModal').classList.add('hidden');
+        }
 
-        // Initialize with HTML mode
-        switchTab('html');
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('sidebar-hidden');
+        }
 
-        // Close output modal
-        document.getElementById('closeOutput').onclick = function () {
-            document.getElementById('outputModal').style.display = 'none';
-        };
+        function openNewFileModal() {
+            document.getElementById('newFileModal').classList.remove('hidden');
+        }
 
-        // Toggle output modal
-        document.getElementById('toggleOutput').onclick = function () {
-            const outputModal = document.getElementById('outputModal');
-            outputModal.style.display = (outputModal.style.display === 'none' || outputModal.style.display === '') ? 'block' : 'none';
-        };
+        function closeNewFileModal() {
+            document.getElementById('newFileModal').classList.add('hidden');
+        }
+
+        function createNewFile() {
+            const fileName = document.getElementById('newFileName').value;
+            if (fileName && (fileName.endsWith('.html') || fileName.endsWith('.css') || fileName.endsWith('.js'))) {
+                const fileId = fileName.split('.')[0];
+                const fileType = fileName.split('.')[1];
+                const fileContainer = document.createElement('div');
+                fileContainer.id = fileId + 'File';
+                fileContainer.className = 'flex items-center justify-between text-gray-300';
+                fileContainer.innerHTML = `
+                    <span onclick="showTab('${fileId}')" class="cursor-pointer">${fileName}</span>
+                    <i class="fas fa-trash-alt cursor-pointer" onclick="deleteFile('${fileId}')"></i>
+                `;
+                document.querySelector('#sidebar .space-y-2').appendChild(fileContainer);
+
+                const tabButton = document.createElement('button');
+                tabButton.id = fileId + 'TabBtn';
+                tabButton.className = 'bg-gray-700 text-white px-4 py-2 rounded-lg';
+                tabButton.innerText = fileType.toUpperCase();
+                tabButton.onclick = () => showTab(fileId);
+                document.querySelector('.flex.space-x-4').appendChild(tabButton);
+
+                const tabContent = document.createElement('div');
+                tabContent.id = fileId + 'Tab';
+                tabContent.className = 'hidden flex-1 bg-gray-800 p-4 rounded-lg';
+                tabContent.innerHTML = `
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="text-gray-400 text-sm">${fileName}</div>
+                        <i class="fas fa-times cursor-pointer text-gray-400" onclick="closeTab('${fileId}')"></i>
+                    </div>
+                    <textarea id="${fileId}Editor" class="editor w-full bg-gray-700 text-gray-300 p-2 rounded-lg" placeholder="Write ${fileType.toUpperCase()} here..."></textarea>
+                `;
+                document.querySelector('.flex-1.p-4.flex.flex-col.space-y-4').appendChild(tabContent);
+
+                closeNewFileModal();
+            } else {
+                alert("Invalid file name or extension. Please use .html, .css, or .js extensions.");
+            }
+        }
     </script>
 </body>
-
 </html>

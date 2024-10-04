@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile HTML IDE</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/material.min.css">
+    <style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+        }
+
+        button{
+            background-color:#ececec;
+            border: none;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .editor-container {
+            height: calc(100vh - 150px);
+          
+            margin-bottom: 10px;
+          
+            border-radius: 30px;
+        }
+
+        .output-modal {
+            display: none;
+            /* Hidden by default */
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            /* Semi-transparent background */
+            z-index: 1000;
+            /* Ensure it's above everything else */
+            padding: 20px;
+            overflow: auto;
+            /* Allow scrolling if necessary */
+        }
+
+        .output-content {
+            background-color: #2d2d30;
+            border: 1px solid #333;
+            height: 100%;
+            /* Full height */
+            padding: 20px;
+            border-radius: 8px;
+            overflow: auto;
+        }
+
+        .active-tab {
+            background-color: #007acc;
+            /* VS Code blue for active tab */
+            color: white;
+        }
+
+        .close-modal {
+            background-color: #f44336;
+            /* Red close button */
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body class="flex flex-col">
+
+    <div class="flex-grow p-4">
+        <h1 class="text-xl font-bold mb-4">Mobile HTML IDE</h1>
+        <div class="flex space-x-4 mb-4">
+            <button id="htmlTab" class="tab-button flex-grow bg-blue-500 text-white font-bold py-2 rounded active-tab">HTML</button>
+            <button id="cssTab" class="tab-button flex-grow bg-gray-600 text-white py-2 rounded">CSS</button>
+            <button id="jsTab" class="tab-button flex-grow bg-gray-600 text-white py-2 rounded">JavaScript</button>
+        </div>
+        <div class="editor-container">
+            <textarea id="code"></textarea>
+        </div>
+    </div>
+
+    <div class="p-4">
+        <button id="runCode" class="w-full bg-green-500 text-white font-bold py-2 rounded">Run Code</button>
+        <button id="toggleOutput" class="w-full bg-blue-500 text-white font-bold py-2 rounded mt-2">Show Output</button>
+    </div>
+
+    <!-- Output Modal -->
+    <div id="outputModal" class="output-modal">
+        <button class="close-modal" id="closeOutput">Close</button>
+        <div id="output" class="output-content w-full p-2 rounded-md"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.css">
+
+    <script>
+        const editor = CodeMirror.fromTextArea(document.getElementById('code'), {
+            lineNumbers: true,
+            mode: "text/html",
+            theme: "material",
+            lineWrapping: true,
+            viewportMargin: Infinity,
+            extraKeys: {
+                "Ctrl-Space": "autocomplete" // Enable auto-complete with Ctrl-Space
+            }
+        });
+
+        let currentMode = "html";
+
+        // Function to run code and display output
+        document.getElementById('runCode').onclick = function () {
+            // Get the current code based on the active tab
+            let htmlCode = localStorage.getItem('htmlCode') || "<!-- Write your HTML code here... -->";
+            let cssCode = localStorage.getItem('cssCode') || "/* Write your CSS code here... */";
+            let jsCode = localStorage.getItem('jsCode') || "// Write your JavaScript code here...";
+
+            // Get the code from the editor
+            if (currentMode === "html") {
+                htmlCode = editor.getValue();
+            } else if (currentMode === "css") {
+                cssCode = editor.getValue();
+            } else if (currentMode === "javascript") {
+                jsCode = editor.getValue();
+            }
+
+            // Save the code to local storage
+            localStorage.setItem('htmlCode', htmlCode);
+            localStorage.setItem('cssCode', cssCode);
+            localStorage.setItem('jsCode', jsCode);
+
+            // Update the output area in the modal
+            const outputFrame = document.getElementById('output');
+            outputFrame.innerHTML = ''; // Clear previous content
+
+            // Create a style tag for CSS
+            const styleTag = document.createElement('style');
+            styleTag.innerHTML = cssCode;
+
+            // Create a script tag for JavaScript
+            const scriptTag = document.createElement('script');
+            scriptTag.innerHTML = jsCode;
+
+            // Append CSS and JavaScript to the output
+            outputFrame.appendChild(styleTag); // Append CSS
+            outputFrame.innerHTML += htmlCode; // Append HTML
+            outputFrame.appendChild(scriptTag); // Append JavaScript
+
+            // Show output modal after running code
+            document.getElementById('outputModal').style.display = 'block';
+        };
+
+        // Tab switching functionality
+        function switchTab(tab) {
+            document.getElementById('htmlTab').classList.remove('active-tab');
+            document.getElementById('cssTab').classList.remove('active-tab');
+            document.getElementById('jsTab').classList.remove('active-tab');
+
+            if (tab === 'html') {
+                currentMode = "html";
+                editor.setOption("mode", "text/html");
+                editor.setValue(localStorage.getItem('htmlCode') || "<!-- Write your HTML code here... -->");
+                document.getElementById('htmlTab').classList.add('active-tab');
+            } else if (tab === 'css') {
+                currentMode = "css";
+                editor.setOption("mode", "text/css");
+                editor.setValue(localStorage.getItem('cssCode') || "/* Write your CSS code here... */");
+                document.getElementById('cssTab').classList.add('active-tab');
+            } else if (tab === 'javascript') {
+                currentMode = "javascript";
+                editor.setOption("mode", "text/javascript");
+                editor.setValue(localStorage.getItem('jsCode') || "// Write your JavaScript code here...");
+                document.getElementById('jsTab').classList.add('active-tab');
+            }
+        }
+
+        // Function to save code to local storage
+        function saveCode() {
+            const code = editor.getValue();
+            if (currentMode === "html") {
+                localStorage.setItem('htmlCode', code);
+            } else if (currentMode === "css") {
+                localStorage.setItem('cssCode', code);
+            } else if (currentMode === "javascript") {
+                localStorage.setItem('jsCode', code);
+            }
+        }
+
+        // Event listeners for tabs
+        document.getElementById('htmlTab').onclick = function () {
+            saveCode(); // Save current code before switching
+            switchTab('html');
+        };
+
+        document.getElementById('cssTab').onclick = function () {
+            saveCode(); // Save current code before switching
+            switchTab('css');
+        };
+
+        document.getElementById('jsTab').onclick = function () {
+            saveCode(); // Save current code before switching
+            switchTab('javascript');
+        };
+
+        // Initialize with HTML mode
+        switchTab('html');
+
+        // Close output modal
+        document.getElementById('closeOutput').onclick = function () {
+            document.getElementById('outputModal').style.display = 'none';
+        };
+
+        // Toggle output modal
+        document.getElementById('toggleOutput').onclick = function () {
+            const outputModal = document.getElementById('outputModal');
+            outputModal.style.display = (outputModal.style.display === 'none' || outputModal.style.display === '') ? 'block' : 'none';
+        };
+    </script>
+</body>
+
+</html>
